@@ -1,0 +1,33 @@
+FROM postgres:15-bookworm
+
+# postgres config /var/lib/postgresql/data
+
+# Copy init script
+COPY init.sql /docker-entrypoint-initdb.d/
+
+# # Install ssh server
+# ENV SSH_CONFIG_FILE=/etc/ssh/sshd_config
+# RUN \
+#     echo "*** Installing SSH and Postgres ***" && \
+#     apt update && \
+#     apt install -y ssh
+
+# # Setup SSH config and permissons
+# RUN \
+#     echo "*** Setting up SSH permissions ***" && \
+#     mkdir /var/run/sshd && \
+#     chmod -R 0755 /var/run/sshd && \
+#     echo 'root:${ROOT_PASSWORD}}' | chpasswd && \
+#     echo "PasswordAuthentication yes" > ${SSH_CONFIG_FILE} && \
+#     echo "PermitEmptyPasswords yes" >> ${SSH_CONFIG_FILE} && \
+#     echo "PermitRootLogin yes" >> ${SSH_CONFIG_FILE}
+
+# # Start ssh server
+# RUN \
+#     echo "*** Injecting SSH startup ***" && \
+#     sed -i 's/exec "$@"/service ssh start\n        exec "$@"/g' /usr/local/bin/docker-entrypoint.sh
+
+# EXPOSE 5432 22
+EXPOSE 5432 22
+
+CMD ["postgres"]

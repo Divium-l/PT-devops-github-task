@@ -1,0 +1,75 @@
+services:
+  telegram_bot:
+    build:
+      context: ./bot/
+      dockerfile: Dockerfile
+    environment:
+      BOT_TOKEN: ${TOKEN}
+      SSH_HOST: ${RM_HOST}
+      SSH_PORT: ${RM_PORT}
+      SSH_USER: ${RM_USER}
+      SSH_PASS: ${RM_PASSWORD}
+      SQL_HOST: ${DB_HOST}
+      SQL_PORT: 5432 
+      SQL_USER: ${DB_USER}
+      SQL_PASS: ${DB_PASSWORD}
+      SQL_DATABASE: ${DB_DATABASE}
+    depends_on:
+      - postgres_primary
+      - postgres_replica
+    
+  postgres_primary:
+    container_name: ${DB_HOST}
+    build:
+      context: ./db/
+      dockerfile: dockerfile
+    ports:
+      - "${DB_PORT}:5432"
+      - "2222:22"
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_DB: ${DB_DATABASE}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_HOST_AUTH_METHOD: "trust\n host replication all 0.0.0.0/0 trust\n host all user 0.0.0.0/0 trust"
+      # POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256"
+    command: |
+      postgres
+      -c wal_level=replica
+      -c wal_log_hints=on
+      -c max_wal_senders=10
+      -c max_replication_slots=10
+      -c hot_standby_feedback=on
+      -c archive_command='cp %p /oracle/pg_data/archive/%f'
+      -c log_replication_commands=on
+      -c listen_addresses='*'
+
+  postgres_replica:
+    container_name: ${DB_REPL_HOST}
+    image: postgres:15-bookworm
+    user: postgres
+    ports:
+      - ${DB_REPL_PORT}:5432
+    environment:
+      PGUSER: ${DB_REPL_USER}
+      PGPASSWORD: ${DB_REPL_PASSWORD}
+    command: |
+      bash -c "
+      rm -rf /var/lib/postgresql/data
+      until pg_basebackup -R -h ${DB_HOST} -U ${DB_USER} -D /var/lib/postgresql/data
+      do
+      echo 'Waiting for primary to connect...'
+      sleep 1s
+      done
+      echo 'Backup done, starting replica...'
+      chmod 0700 /var/lib/postgresql/data
+      postgres
+      "
+    depends_on:
+      - postgres_primary
+
+networks:
+  custom_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet:  172.10.0.0/16

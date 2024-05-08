@@ -1,0 +1,10 @@
+### Python ###
+__pycache__/
+venv/
+
+### Sensetive data ###
+.env
+
+### Misc ###
+logfile.txt
+tests.txt
