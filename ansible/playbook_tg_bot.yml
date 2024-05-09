@@ -1,0 +1,87 @@
+- name: Install postgres
+  hosts: database
+  become: yes
+  tasks:
+    - name: Install postgres on all database hosts
+      ansible.builtin.package:
+        name:
+          - postgresql
+          - postgresql-contrib
+          - vim
+        state: latest
+
+- name: Setup main database
+  hosts: db_main
+  become: yes
+  tasks:
+    - name: Install pg_hba.conf
+      ansible.builtin.copy:
+        src: ./pg_hba.conf
+        dest: /etc/postgresql/14/main/
+        owner: postgres
+        group: postgres
+        mode: '644'
+        backup: yes
+    - name: Install postgresql.conf
+      ansible.builtin.copy:
+        src: ./postgresql.conf
+        dest: /etc/postgresql/14/main/
+        owner: postgres
+        group: postgres
+        mode: '644'
+        backup: yes
+    - name: Start database server
+      ansible.builtin.service:
+        name: postgresql
+        state: started
+        enabled: yes
+    - name: Create replication directory
+      ansible.builtin.file:
+        path: /oracle/pg_data/archive/
+        state: directory
+        owner: postgres
+        group: postgres
+        mode: '774'
+    - name: Create replication user
+      ignore_errors: true
+      command: sudo -u postgres -i psql -c "CREATE ROLE '{{ DB_REPL_USER }}' WITH REPLICATION LOGIN PASSWORD ''{{ DB_REPL_PASSWORD }}''';"
+
+- name: Setup repl database
+  hosts: db_repl
+  become: yes
+  tasks:
+    - name: Clear directory for replication
+      command: rm -rf /var/lib/postgresql/14/main/
+    - name: Create password file
+      ansible.builtin.copy:
+        src: ./.pgpass
+        dest: /root/.pgpass
+    - name: Start replicating
+      ansible.builtin.expect:
+        command: pg_basebackup -R -h {{ DB_HOST }} -U {{ DB_REPL_USER }} -D /var/lib/postgresql/14/main/
+        responses:
+          Password: '{{ DB_REPL_PASSWORD }}'
+
+- name: Setup telegram bot
+  hosts: bot
+  become: yes
+  tasks:
+    - name: Install python
+      ansible.builtin.package:
+        name:
+          - python3
+          - pip
+          - libpq-dev
+          - python3-dev
+        state: latest
+    - name: Pull bot from git
+      ansible.builtin.git:
+        repo: 'https://github.com/Divium-l/PT-devops-github-task.git'
+        version: docker
+        dest: /home/ubuntu/pt-bot
+    - name: Install dependencies to build python packages
+      ansible.builtin.pip:
+        name: psycopg2-binary
+    - name: Install pip dependencies
+      ansible.builtin.pip:
+        requirements: /home/ubuntu/pt-bot/bot/requirements.txt
