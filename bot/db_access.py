@@ -26,6 +26,7 @@ def query_database(query: str, noReturn = False) -> list:
 
     except (Exception, Error) as error:
         logger.error("Ошибка при работе с PostgreSQL: %s", error)
+        raise Exception(error)
     finally:
         if connection is not None:
             cursor.close()

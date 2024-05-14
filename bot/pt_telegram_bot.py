@@ -115,13 +115,16 @@ async def findEmails(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return "saveEmail"
 
 async def saveEmail(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    userInput = update.message.text
+    userInput = update.message.text.lower()
 
-    if (userInput.lower() == "да"):
-        emails = context.user_data["emails"]
-        dba.save_emails(emails)
-        await update.message.reply_text("Данные сохранены")
-    elif (userInput.lower() == "нет"):
+    if (userInput == "да" or userInput == "yes"):
+        try:
+            emails = context.user_data["emails"]
+            dba.save_emails(emails)
+            await update.message.reply_text("Данные сохранены")
+        except Exception as exception:
+            await update.message.reply_text(f"Произошла ошибка при сохранении:\n{exception}")
+    elif (userInput == "нет" or userInput == "no"):
         context.user_data["emails"] = None
     else:
         await update.message.reply_text("Формат ответа: да/нет")
@@ -131,13 +134,16 @@ async def saveEmail(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return ConversationHandler.END
 
 async def savePhone(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    userInput = update.message.text
+    userInput = update.message.text.lower()
 
-    if (userInput.lower() == "да"):
-        phones = context.user_data["phones"]
-        dba.save_phone_numbers(phones)
-        await update.message.reply_text("Данные сохранены")
-    elif (userInput.lower() == "нет"):
+    if (userInput == "да" or userInput == "yes"):
+        try:
+            phones = context.user_data["phones"]
+            dba.save_phone_numbers(phones)
+            await update.message.reply_text("Данные сохранены")
+        except Exception as exception:
+            await update.message.reply_text(f"Произошла ошибка при сохранении:\n{exception}")
+    elif (userInput == "нет" or userInput == "no"):
         context.user_data["phones"] = None
     else:
         await update.message.reply_text("Формат ответа: да/нет")
@@ -219,12 +225,19 @@ async def getReplLogsCommand(update: Update, context: ContextTypes.DEFAULT_TYPE)
     await update.message.reply_text(result)
 
 async def getEmailsCommand(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    result = dba.get_emails()
-    await update.message.reply_text(result)
+    try:
+        result = dba.get_emails()
+        await update.message.reply_text(result)
+    except Exception as exception:
+        await update.message.reply_text(f"Произошла ошибка:\n{exception}")       
 
-async def getPhoneNumbersCommand(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    result = dba.get_phone_numbers()
-    await update.message.reply_text(result)
+async def getPhoneNumbersCommand(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:     
+    try:
+        result = dba.get_phone_numbers()
+        await update.message.reply_text(result)
+    except Exception as exception:
+        await update.message.reply_text(f"Произошла ошибка:\n{exception}")
+
 
 def main():
     logger.info("Starting bot setup")
