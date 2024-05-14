@@ -103,8 +103,12 @@ def get_apt_list(package: str = "") -> str:
     if (specialChars.search(package) != None):
         logger.critical(f"Malicius payload detected {package}")
         return "Forbiden package name"
-    else:
-        return exec_command_on_remote(f"apt list {package}")
+    
+    # by default only installed packages will be listed
+    if (package == ""):
+        package = "--installed"
+
+    return exec_command_on_remote(f"apt list {package}")
 
 ### Сбор информации информации о запущенных сервисах ###  
 def get_services() -> str:
