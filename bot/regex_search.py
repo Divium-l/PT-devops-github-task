@@ -2,7 +2,7 @@ from typing import Union
 import re
 
 def find_email(text: str) -> Union[list[str], None]:
-    emailRegex = re.compile(r"[-\w.]+@.+\..+")
+    emailRegex = re.compile(r"[-\w.]+@.[\w\d-]+\.[\w]+")
     return find_by_regex(text, emailRegex)
 
 def find_phone(text: str) -> Union[list[str], None]:
