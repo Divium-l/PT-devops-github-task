@@ -44,7 +44,9 @@
         mode: '774'
     - name: Create replication user
       ignore_errors: true
-      command: sudo -u postgres -i psql -c "CREATE ROLE '{{ DB_REPL_USER }}' WITH REPLICATION LOGIN PASSWORD ''{{ DB_REPL_PASSWORD }}''';"
+      command: sudo -u postgres -i psql -c "CREATE ROLE {{ DB_REPL_USER }} WITH REPLICATION LOGIN PASSWORD '{{ DB_REPL_PASSWORD }}';"
+    - name: Restart database
+      command: systemctl restart postgresql
 
 - name: Setup repl database
   hosts: db_repl
