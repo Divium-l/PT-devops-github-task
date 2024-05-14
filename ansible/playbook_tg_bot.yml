@@ -54,10 +54,6 @@
   tasks:
     - name: Clear directory for replication
       command: rm -rf /var/lib/postgresql/14/main/
-    - name: Create password file
-      ansible.builtin.copy:
-        src: ./.pgpass
-        dest: /root/.pgpass
     - name: Start replicating
       ansible.builtin.expect:
         command: pg_basebackup -R -h {{ DB_HOST }} -U {{ DB_REPL_USER }} -D /var/lib/postgresql/14/main/
